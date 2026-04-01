@@ -24,6 +24,6 @@ Before submitting, verify:
 ## Test Plan
 <!-- How can reviewers verify this works? -->
 
-## Claude Code Review
-<!-- If you used Claude Code for this PR, paste the output of /alignment-review here -->
+## Automated Review
+<!-- Paste the output of /alignment-review here if available -->
 <!-- If not applicable, write "N/A" -->

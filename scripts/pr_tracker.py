@@ -237,14 +237,14 @@ def post_review(
         pr.create_issue_comment(body)
         return
 
-    formatted_body = f"""> **Note**: This is an automated review by **Claude Code**, not a human review.
+    formatted_body = f"""> **Note**: This is an automated review, not a human review.
 
 ---
 
 {body}
 
 ---
-*Automated review by Claude Code | [Learn more](https://github.com/meta-pytorch/OpenEnv/blob/main/CLAUDE.md)*"""
+*Automated review | [Learn more](https://github.com/meta-pytorch/OpenEnv/blob/main/CLAUDE.md)*"""
 
     pr.create_review(body=formatted_body, event=event)
 

@@ -7,7 +7,7 @@
 
 ## Summary
 
-This RFC defines how OpenEnv integrates with external **agentic harnesses**—systems like OpenClaw, Claude Code, Gemini CLI, and Goose that combine tools, state, and an LLM inference loop (typically ReAct) into a unified control flow. The challenge is that a harness overlaps with an Environment in critical ways (tools, filesystem, state) but adds "brains" by owning the control loop—something environments do not have.
+This RFC defines how OpenEnv integrates with external **agentic harnesses**—systems like OpenClaw, Gemini CLI, and Goose that combine tools, state, and an LLM inference loop (typically ReAct) into a unified control flow. The challenge is that a harness overlaps with an Environment in critical ways (tools, filesystem, state) but adds "brains" by owning the control loop—something environments do not have.
 
 We propose a **wrapping pattern**: OpenEnv's container provides the filesystem and sandbox, the harness runs inside it, and any additional environment MCP tools are injected into the harness before the session starts. In production mode, OpenEnv gets out of the way and lets clients talk directly to the harness with streaming events. In simulation mode, the training loop retains episode control—each `step()` is one conversational turn, and the harness maintains context across turns within an episode.
 
@@ -227,7 +227,7 @@ from typing import AsyncIterator
 class HarnessAdapter(ABC):
     """Abstract adapter for a specific harness implementation.
 
-    Subclass this to integrate a new harness (OpenClaw, Claude Code, etc.).
+    Subclass this to integrate a new harness (OpenClaw, Gemini CLI, etc.).
     The adapter handles harness-specific startup, tool injection, and communication.
 
     The harness is a long-lived process that maintains conversation context.
@@ -353,9 +353,9 @@ class HarnessResponse(BaseModel):
     done: bool = False                 # True if the harness considers the task complete
 ```
 
-Each concrete adapter (OpenClaw, Claude Code, etc.) maps its native event stream to `HarnessEvent`. This gives the orchestrator a uniform way to inspect what happened during a turn, regardless of which harness produced it.
+Each concrete adapter (OpenClaw, Gemini CLI, etc.) maps its native event stream to `HarnessEvent`. This gives the orchestrator a uniform way to inspect what happened during a turn, regardless of which harness produced it.
 
-The `done` flag on `HarnessResponse` allows the harness to signal that it considers the task complete (e.g., Claude Code printing "Task complete"). The orchestrator can use this signal or ignore it.
+The `done` flag on `HarnessResponse` allows the harness to signal that it considers the task complete (e.g., a harness printing "Task complete"). The orchestrator can use this signal or ignore it.
 
 #### HarnessEnvironment
 
@@ -583,7 +583,7 @@ for task in dataset:
 
 **Key design decision**: Each `step()` is one conversational turn, not one internal tool call and not the entire episode. The rationale:
 
-- **Matches the natural interface**: Harnesses are conversational—you send a message, they respond. This is how humans interact with Claude Code, OpenClaw, etc.
+- **Matches the natural interface**: Harnesses are conversational—you send a message, they respond. This is how humans interact with OpenClaw, Gemini CLI, and similar tools.
 - **Enables multi-turn training**: The training loop can provide intermediate feedback, follow-up instructions, or corrections between turns—critical for training agents that work through multi-step tasks.
 - **Harness internal loop is opaque**: Within a turn, the harness may make many LLM calls and tool invocations. We don't intercept these; they're captured in `turn_events` for observability but aren't individual `step()` calls.
 - **Episode boundaries are explicit**: The orchestrator decides when to `reset()`. The harness can signal `done` (e.g., "Task complete"), but the orchestrator makes the final call.

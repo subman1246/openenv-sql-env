@@ -1,13 +1,13 @@
 # Contributing to OpenEnv
 
-OpenEnv is an **agentic-first project** designed for Claude Code contributions.
+OpenEnv is an **agentic-first project** designed for AI-assisted contributions.
 
 ## Quick Links
 
 - **Contribution workflow**: See [.claude/docs/CONTRIBUTING.md](.claude/docs/CONTRIBUTING.md) for the agentic workflow, RFC process, and review expectations
 - **Design principles**: See [.claude/docs/PRINCIPLES.md](.claude/docs/PRINCIPLES.md)
 - **System invariants**: See [.claude/docs/INVARIANTS.md](.claude/docs/INVARIANTS.md)
-- **Claude Code guidance**: See [CLAUDE.md](CLAUDE.md)
+- **Development tooling guidance**: See [CLAUDE.md](CLAUDE.md)
 
 ## Pull Requests
 

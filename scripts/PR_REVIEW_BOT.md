@@ -1,6 +1,6 @@
 # PR Review Bot
 
-Automated PR review system using Claude Code. Runs as a cron job to review open PRs.
+Automated PR review system. Runs as a cron job to review open PRs.
 
 ## Architecture
 
@@ -12,14 +12,14 @@ Automated PR review system using Claude Code. Runs as a cron job to review open 
                             │
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                      Claude Code                            │
+│                    Review Orchestrator                      │
 │  1. Calls pr_tracker.py --list --since 6h                   │
 │  2. Spawns alignment-reviewer subagent for each PR          │
 │  3. Posts reviews via pr_tracker.post_review()              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**Key insight**: Claude handles orchestration. The only code needed is `pr_tracker.py` for GitHub API access.
+**Key insight**: The review agent handles orchestration. The only code needed is `pr_tracker.py` for GitHub API access.
 
 ## Files
 
@@ -52,8 +52,8 @@ python3 scripts/pr_tracker.py --details 123
 ### 3. Test a Review (manually)
 
 ```bash
-claude "Review PR #123 using the alignment-reviewer agent.
-Use scripts/pr_tracker.py to get PR details and post the review."
+# Invoke the alignment-reviewer agent manually for a specific PR
+# Use scripts/pr_tracker.py to get PR details and post the review.
 ```
 
 ### 4. Set Up Cron

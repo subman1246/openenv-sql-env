@@ -400,8 +400,8 @@ class MCPToolClient(MCPClientBase):
             >>> result = await env.call_tool("add", a=5, b=3)
             >>> print(result)  # 8
             >>>
-            >>> result = await env.call_tool("greet", name="Claude")
-            >>> print(result)  # "Hello, Claude!"
+            >>> result = await env.call_tool("greet", name="World")
+            >>> print(result)  # "Hello, World!"
         """
         if getattr(self, "use_production_mode", False):
             session_id = await self._ensure_production_session()
