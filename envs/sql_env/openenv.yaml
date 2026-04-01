@@ -1,0 +1,9 @@
+spec_version: 1
+name: sql_env
+type: space
+runtime: fastapi
+app: server.app:app
+port: 8000
+version: 1.0.0
+description: "SQL Query Debugger — an RL environment where agents fix broken SQL queries"
+author: "OpenEnv Hackathon"

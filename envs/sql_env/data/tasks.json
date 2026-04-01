@@ -1,0 +1,68 @@
+[
+  {
+    "task_id": "easy_001",
+    "difficulty": "easy",
+    "description": "Select all employees who earn more than 50000. The query has a syntax error with a dangling AND.",
+    "schema_sql": "CREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT NOT NULL, department TEXT NOT NULL, salary REAL NOT NULL);",
+    "seed_data_sql": "INSERT INTO employees VALUES (1, 'Alice', 'Engineering', 75000); INSERT INTO employees VALUES (2, 'Bob', 'Marketing', 45000); INSERT INTO employees VALUES (3, 'Carol', 'Engineering', 90000); INSERT INTO employees VALUES (4, 'Dave', 'HR', 55000); INSERT INTO employees VALUES (5, 'Eve', 'Marketing', 48000);",
+    "broken_query": "SELECT name FROM employees WHERE salary > 50000 AND",
+    "expected_query": "SELECT name FROM employees WHERE salary > 50000",
+    "schema_description": "Table: employees\n  - id (INTEGER): Primary key\n  - name (TEXT): Employee name\n  - department (TEXT): Department name\n  - salary (REAL): Annual salary",
+    "expected_description": "Returns the names of employees whose salary is greater than 50000. Should return 3 rows: Alice, Carol, Dave."
+  },
+  {
+    "task_id": "easy_002",
+    "difficulty": "easy",
+    "description": "Select product name and price from the products table, but the query references a non-existent column 'cost' instead of 'price'.",
+    "schema_sql": "CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT NOT NULL, category TEXT NOT NULL, price REAL NOT NULL, stock INTEGER NOT NULL);",
+    "seed_data_sql": "INSERT INTO products VALUES (1, 'Laptop', 'Electronics', 999.99, 50); INSERT INTO products VALUES (2, 'Mouse', 'Electronics', 29.99, 200); INSERT INTO products VALUES (3, 'Desk', 'Furniture', 349.99, 30); INSERT INTO products VALUES (4, 'Chair', 'Furniture', 199.99, 45); INSERT INTO products VALUES (5, 'Keyboard', 'Electronics', 79.99, 150);",
+    "broken_query": "SELECT name, cost FROM products WHERE category = 'Electronics'",
+    "expected_query": "SELECT name, price FROM products WHERE category = 'Electronics'",
+    "schema_description": "Table: products\n  - id (INTEGER): Primary key\n  - name (TEXT): Product name\n  - category (TEXT): Product category\n  - price (REAL): Product price\n  - stock (INTEGER): Units in stock",
+    "expected_description": "Returns name and price of all Electronics products. Should return 3 rows: Laptop (999.99), Mouse (29.99), Keyboard (79.99)."
+  },
+  {
+    "task_id": "medium_001",
+    "difficulty": "medium",
+    "description": "Get each customer's name and their order total, but the JOIN condition is wrong — it joins on orders.id = customers.id instead of orders.customer_id = customers.id.",
+    "schema_sql": "CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL, city TEXT NOT NULL); CREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER NOT NULL, total REAL NOT NULL, status TEXT NOT NULL);",
+    "seed_data_sql": "INSERT INTO customers VALUES (1, 'Alice', 'New York'); INSERT INTO customers VALUES (2, 'Bob', 'Chicago'); INSERT INTO customers VALUES (3, 'Carol', 'San Francisco'); INSERT INTO orders VALUES (1, 2, 150.00, 'shipped'); INSERT INTO orders VALUES (2, 1, 320.50, 'delivered'); INSERT INTO orders VALUES (3, 3, 89.99, 'pending'); INSERT INTO orders VALUES (4, 1, 450.00, 'delivered');",
+    "broken_query": "SELECT customers.name, orders.total FROM orders JOIN customers ON orders.id = customers.id",
+    "expected_query": "SELECT customers.name, orders.total FROM orders JOIN customers ON orders.customer_id = customers.id",
+    "schema_description": "Table: customers\n  - id (INTEGER): Primary key\n  - name (TEXT): Customer name\n  - city (TEXT): City\n\nTable: orders\n  - id (INTEGER): Primary key\n  - customer_id (INTEGER): Foreign key referencing customers.id\n  - total (REAL): Order total amount\n  - status (TEXT): Order status",
+    "expected_description": "Returns each customer's name alongside their order total. Should return 4 rows pairing each order with the correct customer name."
+  },
+  {
+    "task_id": "medium_002",
+    "difficulty": "medium",
+    "description": "Find all students who passed (score >= 60) in the 'Mathematics' course, but the WHERE clause uses the wrong condition — it filters on score < 60 instead of score >= 60.",
+    "schema_sql": "CREATE TABLE students (id INTEGER PRIMARY KEY, name TEXT NOT NULL, grade TEXT NOT NULL); CREATE TABLE enrollments (id INTEGER PRIMARY KEY, student_id INTEGER NOT NULL, course TEXT NOT NULL, score REAL NOT NULL);",
+    "seed_data_sql": "INSERT INTO students VALUES (1, 'Alice', 'A'); INSERT INTO students VALUES (2, 'Bob', 'B'); INSERT INTO students VALUES (3, 'Carol', 'A'); INSERT INTO students VALUES (4, 'Dave', 'C'); INSERT INTO enrollments VALUES (1, 1, 'Mathematics', 92.0); INSERT INTO enrollments VALUES (2, 2, 'Mathematics', 55.0); INSERT INTO enrollments VALUES (3, 3, 'Mathematics', 78.0); INSERT INTO enrollments VALUES (4, 4, 'Mathematics', 41.0); INSERT INTO enrollments VALUES (5, 1, 'Physics', 88.0);",
+    "broken_query": "SELECT students.name FROM students JOIN enrollments ON students.id = enrollments.student_id WHERE enrollments.course = 'Mathematics' AND enrollments.score < 60",
+    "expected_query": "SELECT students.name FROM students JOIN enrollments ON students.id = enrollments.student_id WHERE enrollments.course = 'Mathematics' AND enrollments.score >= 60",
+    "schema_description": "Table: students\n  - id (INTEGER): Primary key\n  - name (TEXT): Student name\n  - grade (TEXT): Overall grade\n\nTable: enrollments\n  - id (INTEGER): Primary key\n  - student_id (INTEGER): Foreign key referencing students.id\n  - course (TEXT): Course name\n  - score (REAL): Score achieved",
+    "expected_description": "Returns names of students who passed Mathematics (score >= 60). Should return 2 rows: Alice, Carol."
+  },
+  {
+    "task_id": "hard_001",
+    "difficulty": "hard",
+    "description": "Calculate the total sales amount per product, but the GROUP BY uses the wrong column — it groups by category instead of product_id.",
+    "schema_sql": "CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT NOT NULL, category TEXT NOT NULL); CREATE TABLE sales (id INTEGER PRIMARY KEY, product_id INTEGER NOT NULL, amount REAL NOT NULL, sale_date TEXT NOT NULL);",
+    "seed_data_sql": "INSERT INTO products VALUES (1, 'Laptop', 'Electronics'); INSERT INTO products VALUES (2, 'Phone', 'Electronics'); INSERT INTO products VALUES (3, 'Desk', 'Furniture'); INSERT INTO sales VALUES (1, 1, 999.99, '2024-01-10'); INSERT INTO sales VALUES (2, 1, 999.99, '2024-01-15'); INSERT INTO sales VALUES (3, 2, 699.99, '2024-01-12'); INSERT INTO sales VALUES (4, 3, 349.99, '2024-01-20'); INSERT INTO sales VALUES (5, 2, 699.99, '2024-02-01');",
+    "broken_query": "SELECT products.name, SUM(sales.amount) as total_sales FROM sales JOIN products ON sales.product_id = products.id GROUP BY products.category",
+    "expected_query": "SELECT products.name, SUM(sales.amount) as total_sales FROM sales JOIN products ON sales.product_id = products.id GROUP BY products.id ORDER BY products.id",
+    "schema_description": "Table: products\n  - id (INTEGER): Primary key\n  - name (TEXT): Product name\n  - category (TEXT): Product category\n\nTable: sales\n  - id (INTEGER): Primary key\n  - product_id (INTEGER): Foreign key referencing products.id\n  - amount (REAL): Sale amount\n  - sale_date (TEXT): Date of sale (YYYY-MM-DD)",
+    "expected_description": "Returns each product's name and total sales amount. Should return 3 rows: Laptop (1999.98), Phone (1399.98), Desk (349.99)."
+  },
+  {
+    "task_id": "hard_002",
+    "difficulty": "hard",
+    "description": "Find departments where the average salary is above the company-wide average salary. The subquery incorrectly computes MAX instead of AVG for the company-wide figure.",
+    "schema_sql": "CREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT NOT NULL, department TEXT NOT NULL, salary REAL NOT NULL);",
+    "seed_data_sql": "INSERT INTO employees VALUES (1, 'Alice', 'Engineering', 95000); INSERT INTO employees VALUES (2, 'Bob', 'Engineering', 85000); INSERT INTO employees VALUES (3, 'Carol', 'Marketing', 55000); INSERT INTO employees VALUES (4, 'Dave', 'Marketing', 60000); INSERT INTO employees VALUES (5, 'Eve', 'HR', 50000); INSERT INTO employees VALUES (6, 'Frank', 'HR', 52000); INSERT INTO employees VALUES (7, 'Grace', 'Engineering', 105000);",
+    "broken_query": "SELECT department, AVG(salary) as avg_salary FROM employees GROUP BY department HAVING AVG(salary) > (SELECT MAX(salary) FROM employees)",
+    "expected_query": "SELECT department, AVG(salary) as avg_salary FROM employees GROUP BY department HAVING AVG(salary) > (SELECT AVG(salary) FROM employees) ORDER BY department",
+    "schema_description": "Table: employees\n  - id (INTEGER): Primary key\n  - name (TEXT): Employee name\n  - department (TEXT): Department name\n  - salary (REAL): Annual salary",
+    "expected_description": "Returns departments where the average salary exceeds the company-wide average. Should return 1 row: Engineering (avg ~95000), since the company-wide average is ~71714."
+  }
+]
