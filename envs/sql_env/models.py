@@ -32,6 +32,7 @@ class SqlObservation(Observation):
     query_result: str = Field(default="", description="The result of running the agent's query (empty on reset)")
     success: bool = Field(default=False, description="Whether the agent's query matched the expected output")
     feedback: str = Field(default="", description="Human-readable feedback on the agent's query")
+    attempts_remaining: int = Field(default=5, description="Number of attempts remaining in this episode")
 
 
 class SqlState(State):
@@ -40,3 +41,4 @@ class SqlState(State):
     current_task_id: str = Field(default="", description="ID of the current task")
     current_difficulty: str = Field(default="", description="Difficulty of the current task")
     total_reward: float = Field(default=0.0, description="Cumulative reward for the current episode")
+    max_steps: int = Field(default=5, description="Maximum number of steps allowed per episode")

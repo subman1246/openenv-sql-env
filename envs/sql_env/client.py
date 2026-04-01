@@ -59,6 +59,7 @@ class SqlEnv(EnvClient[SqlAction, SqlObservation, SqlState]):
             reward=reward,
             success=obs_data.get("success", False),
             feedback=obs_data.get("feedback", ""),
+            attempts_remaining=obs_data.get("attempts_remaining", 0),
             metadata=obs_data.get("metadata", {}),
         )
         return StepResult(
@@ -74,4 +75,5 @@ class SqlEnv(EnvClient[SqlAction, SqlObservation, SqlState]):
             current_task_id=payload.get("current_task_id", ""),
             current_difficulty=payload.get("current_difficulty", ""),
             total_reward=payload.get("total_reward", 0.0),
+            max_steps=payload.get("max_steps", 5),
         )

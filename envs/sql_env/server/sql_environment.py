@@ -166,6 +166,8 @@ class SqlEnvironment(Environment):
 
     SUPPORTS_CONCURRENT_SESSIONS: bool = True
 
+    MAX_STEPS: int = 5
+
     def __init__(self):
         super().__init__()
         self._tasks = _load_tasks()
@@ -229,6 +231,7 @@ class SqlEnvironment(Environment):
             current_task_id=task["task_id"],
             current_difficulty=task["difficulty"],
             total_reward=0.0,
+            max_steps=self.MAX_STEPS,
         )
 
         return SqlObservation(
@@ -242,6 +245,7 @@ class SqlEnvironment(Environment):
             reward=0.0,
             success=False,
             feedback="Environment ready. Submit your fixed SQL query.",
+            attempts_remaining=self.MAX_STEPS,
         )
 
     def step(
@@ -265,9 +269,11 @@ class SqlEnvironment(Environment):
                 reward=0.0,
                 success=False,
                 feedback="Environment not initialised. Call reset() first.",
+                attempts_remaining=0,
             )
 
         self._state.step_count += 1
+        attempts_remaining = max(0, self.MAX_STEPS - self._state.step_count)
         task = self._current_task
 
         # Execute agent query
@@ -286,13 +292,13 @@ class SqlEnvironment(Environment):
                 reward=0.0,
                 success=False,
                 feedback=f"Query failed to execute: {agent_error}",
+                attempts_remaining=attempts_remaining,
             )
 
         # Execute expected query to get ground truth
         expected_rows, expected_cols, expected_error = _run_query(self._conn, task["expected_query"])
 
         if expected_error is not None:
-            # Shouldn't happen with well-formed tasks, but handle gracefully
             return SqlObservation(
                 task_id=task["task_id"],
                 difficulty=task["difficulty"],
@@ -304,12 +310,18 @@ class SqlEnvironment(Environment):
                 reward=0.0,
                 success=False,
                 feedback=f"Internal error: expected query failed ({expected_error})",
+                attempts_remaining=attempts_remaining,
             )
 
         grader = _GRADERS.get(task["difficulty"], _grade)
         score, feedback = grader(agent_rows, agent_cols, expected_rows, expected_cols)
 
         self._state.total_reward += score
+
+        # End episode on perfect score or when max steps reached
+        done = (score == 1.0) or (self._state.step_count >= self.MAX_STEPS)
+        if self._state.step_count >= self.MAX_STEPS and score < 1.0:
+            feedback = f"Maximum attempts reached. Episode ended. {feedback}"
 
         return SqlObservation(
             task_id=task["task_id"],
@@ -318,10 +330,11 @@ class SqlEnvironment(Environment):
             schema_description=task["schema_description"],
             expected_description=task["expected_description"],
             query_result=_rows_to_str(agent_rows, agent_cols),
-            done=True,
+            done=done,
             reward=score,
             success=(score == 1.0),
             feedback=feedback,
+            attempts_remaining=attempts_remaining,
         )
 
     @property
