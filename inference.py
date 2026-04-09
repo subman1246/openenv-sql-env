@@ -1,22 +1,20 @@
 """
-SQL Query Debugger — Baseline LLM Agent (Groq)
-===============================================
-Connects to a running sql_env server, runs an LLM via Groq's
-OpenAI-compatible API on every task at each difficulty level,
-and prints a score report.
-
-Get a free Groq API key at: https://console.groq.com
-  1. Sign up / log in
-  2. Go to "API Keys" in the left sidebar
-  3. Click "Create API Key" and copy it
-  4. Export it: export GROQ_API_KEY=<your-key>
+SQL Query Debugger — Baseline LLM Agent
+========================================
+Connects to a running sql_env server, runs an LLM via any OpenAI-compatible
+API on every task at each difficulty level, and prints a score report.
 
 Environment variables:
-    GROQ_API_KEY  — Groq API key (required)
-    MODEL_NAME    — Model to use (default: llama-3.3-70b-versatile)
+    OPENAI_API_KEY  — API key (required)
+    API_BASE_URL    — Base URL for the OpenAI-compatible API
+                      (default: https://api.groq.com/openai/v1)
+    MODEL_NAME      — Model to use (default: llama-3.3-70b-versatile)
+    SQL_ENV_URL     — WebSocket URL of the sql_env server
+                      (default: ws://localhost:8000)
 
 Usage:
-    python baseline.py
+    export OPENAI_API_KEY=<your-key>
+    python inference.py
 """
 
 from __future__ import annotations
@@ -34,18 +32,11 @@ from openai import AsyncOpenAI
 # Configuration
 # ---------------------------------------------------------------------------
 
-# Required: get a free key at https://console.groq.com
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
-
-# Groq's OpenAI-compatible endpoint
-GROQ_BASE_URL = "https://api.groq.com/openai/v1"
-
+API_KEY = os.environ.get("OPENAI_API_KEY", "")
+API_BASE_URL = os.environ.get("API_BASE_URL", "https://api.groq.com/openai/v1")
 MODEL_NAME = os.environ.get("MODEL_NAME", "llama-3.3-70b-versatile")
+SQL_ENV_URL = os.environ.get("SQL_ENV_URL", "ws://localhost:8000")
 
-# sql_env WebSocket server (started via: python -m envs.sql_env.server)
-SQL_ENV_URL = "ws://localhost:8000"
-
-# One task per difficulty, all with seed=42 for reproducibility
 DIFFICULTY_LEVELS = ["easy", "medium", "hard"]
 SEED = 42
 
@@ -64,7 +55,7 @@ no extra text. Just the raw SQL statement.\
 # ---------------------------------------------------------------------------
 
 async def ask_llm(client: AsyncOpenAI, broken_query: str, schema: str, expected_description: str) -> str:
-    """Send broken query + schema to Groq LLM and return the fixed SQL."""
+    """Send broken query + schema to the LLM and return the fixed SQL."""
     user_message = (
         f"Database schema:\n{schema}\n\n"
         f"Expected result: {expected_description}\n\n"
@@ -106,14 +97,12 @@ async def run_episode(client: AsyncOpenAI, difficulty: str) -> EpisodeResult:
     from envs.sql_env.models import SqlAction
 
     async with SqlEnv(base_url=SQL_ENV_URL) as env:
-        # Reset with seed=42 and difficulty to get a deterministic task
         reset_result = await env.reset(seed=SEED, difficulty=difficulty)
         obs = reset_result.observation
 
         print(f"\n[{difficulty.upper()}] Task: {obs.task_id}")
         print(f"  Broken query : {obs.broken_query}")
 
-        # Ask the LLM (via Groq) to fix the query
         fixed_query = await ask_llm(
             client,
             broken_query=obs.broken_query,
@@ -122,7 +111,6 @@ async def run_episode(client: AsyncOpenAI, difficulty: str) -> EpisodeResult:
         )
         print(f"  Fixed query  : {fixed_query}")
 
-        # Submit the fixed query to the environment
         step_result = await env.step(SqlAction(fixed_query=fixed_query))
         obs = step_result.observation
 
@@ -144,19 +132,19 @@ async def run_episode(client: AsyncOpenAI, difficulty: str) -> EpisodeResult:
 # ---------------------------------------------------------------------------
 
 async def main() -> None:
-    if not GROQ_API_KEY:
+    if not API_KEY:
         print(
-            "ERROR: GROQ_API_KEY is not set.\n"
-            "Get a free key at https://console.groq.com and run:\n"
-            "  export GROQ_API_KEY=<your-key>",
+            "ERROR: OPENAI_API_KEY is not set.\n"
+            "Set your API key and run:\n"
+            "  export OPENAI_API_KEY=<your-key>",
             file=sys.stderr,
         )
         sys.exit(1)
 
-    # Build one AsyncOpenAI client pointed at Groq's OpenAI-compatible endpoint
-    groq_client = AsyncOpenAI(api_key=GROQ_API_KEY, base_url=GROQ_BASE_URL)
+    client = AsyncOpenAI(api_key=API_KEY, base_url=API_BASE_URL)
 
     print(f"Model  : {MODEL_NAME}")
+    print(f"API    : {API_BASE_URL}")
     print(f"Server : {SQL_ENV_URL}")
     print(f"Seed   : {SEED}")
     print("=" * 60)
@@ -164,10 +152,10 @@ async def main() -> None:
     results: List[EpisodeResult] = []
     for difficulty in DIFFICULTY_LEVELS:
         try:
-            result = await run_episode(groq_client, difficulty)
+            result = await run_episode(client, difficulty)
             results.append(result)
         except Exception as exc:
-            print(f"\n[{difficulty.upper()}] ERROR: {exc}")
+            print(f"\n[{difficulty.upper()}] ERROR: {exc}", file=sys.stderr)
             results.append(
                 EpisodeResult(
                     difficulty=difficulty,
@@ -196,4 +184,8 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("\nInterrupted.", file=sys.stderr)
+        sys.exit(1)
