@@ -170,20 +170,22 @@ async def run_episode(client: OpenAI, difficulty: str) -> None:
                     done = True
                     error_msg = str(exc)
 
+                reward = max(0.01, min(0.99, reward))
                 rewards.append(reward)
                 log_step(step=steps, action=fixed_query, reward=reward, done=done, error=error_msg)
 
-        score = rewards[-1] if rewards else 0.0
+        score = rewards[-1] if rewards else 0.01
+        score = max(0.01, min(0.99, score))
         success = score >= 0.5
 
     except Exception as exc:
         error_msg = str(exc)
         print(f"ERROR in episode '{difficulty}': {error_msg}", file=sys.stderr)
         if steps == 0:
-            rewards.append(0.0)
-            log_step(step=1, action="", reward=0.0, done=True, error=error_msg)
+            rewards.append(0.01)
+            log_step(step=1, action="", reward=0.01, done=True, error=error_msg)
             steps = 1
-        score = 0.0
+        score = 0.01
         success = False
 
     finally:
@@ -202,8 +204,8 @@ async def main() -> None:
         )
         for difficulty in DIFFICULTY_LEVELS:
             log_start(task=difficulty, env="sql_env", model=MODEL_NAME)
-            log_step(step=1, action="", reward=0.0, done=True, error="missing API key")
-            log_end(success=False, steps=1, score=0.0, rewards=[0.0])
+            log_step(step=1, action="", reward=0.01, done=True, error="missing API key")
+            log_end(success=False, steps=1, score=0.01, rewards=[0.01])
         return
 
     client = OpenAI(api_key=HF_TOKEN, base_url=API_BASE_URL)
@@ -217,5 +219,5 @@ if __name__ == "__main__":
         asyncio.run(main())
     except BaseException as exc:
         print(f"ERROR: unhandled exception: {exc}", file=sys.stderr)
-        print("[END] success=false steps=0 score=0.0000 rewards=", flush=True)
+        print("[END] success=false steps=0 score=0.0100 rewards=0.01", flush=True)
         sys.exit(1)
