@@ -26,6 +26,10 @@ import re
 import sys
 from typing import List
 
+_script_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, _script_dir)
+sys.path.insert(0, os.path.join(_script_dir, 'envs'))
+
 try:
     from openai import OpenAI
 except Exception as _e:
@@ -36,10 +40,20 @@ except Exception as _e:
 try:
     from envs.sql_env.client import SqlEnv
     from envs.sql_env.models import SqlAction
-except Exception as _e:
-    print(f"ERROR: failed to import sql_env: {_e}", file=sys.stderr)
-    print("[END] success=false steps=0 score=0.0000 rewards=", flush=True)
-    sys.exit(1)
+except ImportError:
+    try:
+        from sql_env.client import SqlEnv
+        from sql_env.models import SqlAction
+    except ImportError:
+        try:
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'envs'))
+            from sql_env.client import SqlEnv
+            from sql_env.models import SqlAction
+        except Exception as _e:
+            print(f"ERROR: failed to import sql_env: {_e}", file=sys.stderr)
+            print("[END] success=false steps=0 score=0.0000 rewards=", flush=True)
+            sys.exit(1)
 
 # ---------------------------------------------------------------------------
 # Configuration
