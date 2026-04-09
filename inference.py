@@ -10,8 +10,8 @@ Environment variables:
     MODEL_NAME        — Model to use
                         (default: llama-3.3-70b-versatile)
     HF_TOKEN          — API key (also checked as API_KEY)
-    LOCAL_IMAGE_NAME  — Docker image name for the environment
-                        (default: sql-env)
+    SQL_ENV_URL       — WebSocket URL of the sql_env server
+                        (default: ws://localhost:8000)
 
 Usage:
     export HF_TOKEN=<your-api-key>
@@ -26,7 +26,20 @@ import re
 import sys
 from typing import List
 
-from openai import OpenAI
+try:
+    from openai import OpenAI
+except Exception as _e:
+    print(f"ERROR: failed to import openai: {_e}", file=sys.stderr)
+    print("[END] success=false steps=0 score=0.0000 rewards=", flush=True)
+    sys.exit(1)
+
+try:
+    from envs.sql_env.client import SqlEnv
+    from envs.sql_env.models import SqlAction
+except Exception as _e:
+    print(f"ERROR: failed to import sql_env: {_e}", file=sys.stderr)
+    print("[END] success=false steps=0 score=0.0000 rewards=", flush=True)
+    sys.exit(1)
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -35,7 +48,7 @@ from openai import OpenAI
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.groq.com/openai/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "llama-3.3-70b-versatile")
 HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
-LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME", "sql-env")
+SQL_ENV_URL = os.getenv("SQL_ENV_URL", "ws://localhost:8000")
 
 DIFFICULTY_LEVELS = ["easy", "medium", "hard"]
 SEED = 42
@@ -110,9 +123,6 @@ def ask_llm(client: OpenAI, broken_query: str, schema: str, expected_description
 
 async def run_episode(client: OpenAI, difficulty: str) -> None:
     """Run one episode at the given difficulty and print structured logs."""
-    from envs.sql_env.client import SqlEnv
-    from envs.sql_env.models import SqlAction
-
     log_start(task=difficulty, env="sql_env", model=MODEL_NAME)
 
     rewards: List[float] = []
@@ -121,7 +131,7 @@ async def run_episode(client: OpenAI, difficulty: str) -> None:
     success = False
 
     try:
-        async with SqlEnv.from_docker_image(LOCAL_IMAGE_NAME) as env:
+        async with SqlEnv(base_url=SQL_ENV_URL) as env:
             reset_result = await env.reset(seed=SEED, difficulty=difficulty)
             obs = reset_result.observation
             done = False
@@ -154,6 +164,7 @@ async def run_episode(client: OpenAI, difficulty: str) -> None:
 
     except Exception as exc:
         error_msg = str(exc)
+        print(f"ERROR in episode '{difficulty}': {error_msg}", file=sys.stderr)
         if steps == 0:
             rewards.append(0.0)
             log_step(step=1, action="", reward=0.0, done=True, error=error_msg)
@@ -175,7 +186,11 @@ async def main() -> None:
             "ERROR: No API key found. Set HF_TOKEN or API_KEY and retry.",
             file=sys.stderr,
         )
-        sys.exit(1)
+        for difficulty in DIFFICULTY_LEVELS:
+            log_start(task=difficulty, env="sql_env", model=MODEL_NAME)
+            log_step(step=1, action="", reward=0.0, done=True, error="missing API key")
+            log_end(success=False, steps=1, score=0.0, rewards=[0.0])
+        return
 
     client = OpenAI(api_key=HF_TOKEN, base_url=API_BASE_URL)
 
@@ -186,6 +201,7 @@ async def main() -> None:
 if __name__ == "__main__":
     try:
         asyncio.run(main())
-    except KeyboardInterrupt:
-        print("\nInterrupted.", file=sys.stderr)
+    except BaseException as exc:
+        print(f"ERROR: unhandled exception: {exc}", file=sys.stderr)
+        print("[END] success=false steps=0 score=0.0000 rewards=", flush=True)
         sys.exit(1)
