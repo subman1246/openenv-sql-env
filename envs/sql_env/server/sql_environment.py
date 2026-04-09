@@ -280,7 +280,8 @@ class SqlEnvironment(Environment):
         agent_rows, agent_cols, agent_error = _run_query(self._conn, action.fixed_query)
 
         if agent_error is not None:
-            self._state.total_reward += 0.0
+            _reward = max(0.01, min(0.99, 0.0))
+            self._state.total_reward += _reward
             return SqlObservation(
                 task_id=task["task_id"],
                 difficulty=task["difficulty"],
@@ -289,7 +290,7 @@ class SqlEnvironment(Environment):
                 expected_description=task["expected_description"],
                 query_result=f"ERROR: {agent_error}",
                 done=True,
-                reward=0.0,
+                reward=_reward,
                 success=False,
                 feedback=f"Query failed to execute: {agent_error}",
                 attempts_remaining=attempts_remaining,
@@ -299,6 +300,7 @@ class SqlEnvironment(Environment):
         expected_rows, expected_cols, expected_error = _run_query(self._conn, task["expected_query"])
 
         if expected_error is not None:
+            _reward = max(0.01, min(0.99, 0.0))
             return SqlObservation(
                 task_id=task["task_id"],
                 difficulty=task["difficulty"],
@@ -307,7 +309,7 @@ class SqlEnvironment(Environment):
                 expected_description=task["expected_description"],
                 query_result=_rows_to_str(agent_rows, agent_cols),
                 done=True,
-                reward=0.0,
+                reward=_reward,
                 success=False,
                 feedback=f"Internal error: expected query failed ({expected_error})",
                 attempts_remaining=attempts_remaining,
@@ -315,12 +317,13 @@ class SqlEnvironment(Environment):
 
         grader = _GRADERS.get(task["difficulty"], _grade)
         score, feedback = grader(agent_rows, agent_cols, expected_rows, expected_cols)
+        score = max(0.01, min(0.99, score))
 
         self._state.total_reward += score
 
         # End episode on perfect score or when max steps reached
-        done = (score == 1.0) or (self._state.step_count >= self.MAX_STEPS)
-        if self._state.step_count >= self.MAX_STEPS and score < 1.0:
+        done = (score >= 0.99) or (self._state.step_count >= self.MAX_STEPS)
+        if self._state.step_count >= self.MAX_STEPS and score < 0.99:
             feedback = f"Maximum attempts reached. Episode ended. {feedback}"
 
         return SqlObservation(
@@ -332,7 +335,7 @@ class SqlEnvironment(Environment):
             query_result=_rows_to_str(agent_rows, agent_cols),
             done=done,
             reward=score,
-            success=(score == 1.0),
+            success=(score >= 0.99),
             feedback=feedback,
             attempts_remaining=attempts_remaining,
         )
