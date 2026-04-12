@@ -83,10 +83,6 @@ Comparison is case-insensitive on column names and order-insensitive on rows. Fl
 
 ---
 
-## Tasks
-
-Tasks are defined in `data/tasks.json`. Each task includes a schema, seed data, a broken query, and the expected correct query. Tasks are grouped into three difficulty levels.
-
 ### Easy — Syntax Errors
 
 Simple `SELECT` queries on a single table with surface-level bugs: dangling `AND` clauses, wrong column names, or mismatched aliases. No joins required.
@@ -121,6 +117,12 @@ Evaluated using `llama-3.3-70b-versatile` via [Groq](https://console.groq.com) w
 
 ---
 
+## Tasks
+
+Tasks are defined in `data/tasks.json`. The dataset contains **15 tasks** across three difficulty levels: **5 easy**, **5 medium**, and **5 hard**.
+
+---
+
 ## Setup and Usage
 
 ### Prerequisites
@@ -142,18 +144,25 @@ PYTHONPATH=src:envs uv run python -m envs.sql_env.server
 
 ### Run the Baseline Agent
 
-Requires a free [Groq API key](https://console.groq.com).
+Requires an API key for an OpenAI-compatible inference endpoint (e.g. [Groq](https://console.groq.com)).
 
 ```bash
-export GROQ_API_KEY=<your-key>
-PYTHONPATH=src:envs uv run python baseline.py
+export HF_TOKEN=<your-api-key>
+PYTHONPATH=src:envs uv run python envs/sql_env/baseline.py
 ```
 
-Override the model with:
+Override the model or endpoint with:
 
 ```bash
-MODEL_NAME=llama-3.1-8b-instant GROQ_API_KEY=<your-key> uv run python baseline.py
+MODEL_NAME=llama-3.1-8b-instant API_BASE_URL=https://api.groq.com/openai/v1 HF_TOKEN=<your-key> uv run python envs/sql_env/baseline.py
 ```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `HF_TOKEN` | — | API key (required) |
+| `API_BASE_URL` | `https://api.groq.com/openai/v1` | OpenAI-compatible base URL |
+| `MODEL_NAME` | `llama-3.3-70b-versatile` | Model to use |
+| `SQL_ENV_URL` | `ws://localhost:8000` | WebSocket URL of the sql_env server |
 
 ### Run with Docker
 

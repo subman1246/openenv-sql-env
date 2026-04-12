@@ -22,6 +22,39 @@
     "expected_description": "Returns name and price of all Electronics products. Should return 3 rows: Laptop (999.99), Mouse (29.99), Keyboard (79.99)."
   },
   {
+    "task_id": "easy_003",
+    "difficulty": "easy",
+    "description": "Find hospital patients with a fever (temperature above 38.5 degrees). The broken query uses the wrong comparison operator — it filters temperature < 38.5 instead of temperature > 38.5.",
+    "schema_sql": "CREATE TABLE patients (id INTEGER PRIMARY KEY, name TEXT NOT NULL, ward TEXT NOT NULL, temperature REAL NOT NULL, admitted_date TEXT NOT NULL);",
+    "seed_data_sql": "INSERT INTO patients VALUES (1, 'Alice', 'General', 37.2, '2024-01-10'); INSERT INTO patients VALUES (2, 'Bob', 'ICU', 39.1, '2024-01-11'); INSERT INTO patients VALUES (3, 'Carol', 'General', 38.9, '2024-01-12'); INSERT INTO patients VALUES (4, 'Dave', 'Pediatric', 36.8, '2024-01-13'); INSERT INTO patients VALUES (5, 'Eve', 'ICU', 40.2, '2024-01-14');",
+    "broken_query": "SELECT name FROM patients WHERE temperature < 38.5",
+    "expected_query": "SELECT name FROM patients WHERE temperature > 38.5",
+    "schema_description": "Table: patients\n  - id (INTEGER): Primary key\n  - name (TEXT): Patient name\n  - ward (TEXT): Hospital ward\n  - temperature (REAL): Body temperature in degrees Celsius\n  - admitted_date (TEXT): Admission date (YYYY-MM-DD)",
+    "expected_description": "Returns names of patients with a fever (temperature above 38.5 degrees). Should return 3 rows: Bob (39.1), Carol (38.9), Eve (40.2)."
+  },
+  {
+    "task_id": "easy_004",
+    "difficulty": "easy",
+    "description": "List product names and quantities from the North warehouse. The broken query references a non-existent column 'qty' instead of 'quantity'.",
+    "schema_sql": "CREATE TABLE inventory (id INTEGER PRIMARY KEY, product_name TEXT NOT NULL, warehouse TEXT NOT NULL, quantity INTEGER NOT NULL, unit_price REAL NOT NULL);",
+    "seed_data_sql": "INSERT INTO inventory VALUES (1, 'Widget A', 'North', 150, 5.99); INSERT INTO inventory VALUES (2, 'Widget B', 'South', 80, 8.49); INSERT INTO inventory VALUES (3, 'Gadget X', 'North', 200, 12.99); INSERT INTO inventory VALUES (4, 'Gadget Y', 'East', 60, 15.00); INSERT INTO inventory VALUES (5, 'Part Z', 'North', 320, 2.50);",
+    "broken_query": "SELECT product_name, qty FROM inventory WHERE warehouse = 'North'",
+    "expected_query": "SELECT product_name, quantity FROM inventory WHERE warehouse = 'North'",
+    "schema_description": "Table: inventory\n  - id (INTEGER): Primary key\n  - product_name (TEXT): Product name\n  - warehouse (TEXT): Warehouse location\n  - quantity (INTEGER): Units in stock\n  - unit_price (REAL): Price per unit",
+    "expected_description": "Returns product name and quantity for all items in the North warehouse. Should return 3 rows: Widget A (150), Gadget X (200), Part Z (320)."
+  },
+  {
+    "task_id": "easy_005",
+    "difficulty": "easy",
+    "description": "Find Checking account holders with a balance above 1000. The broken query uses OR instead of AND, which incorrectly also returns Savings account holders with high balances.",
+    "schema_sql": "CREATE TABLE accounts (id INTEGER PRIMARY KEY, holder_name TEXT NOT NULL, account_type TEXT NOT NULL, balance REAL NOT NULL);",
+    "seed_data_sql": "INSERT INTO accounts VALUES (1, 'Alice', 'Checking', 2500.00); INSERT INTO accounts VALUES (2, 'Bob', 'Savings', 5800.00); INSERT INTO accounts VALUES (3, 'Carol', 'Checking', 750.00); INSERT INTO accounts VALUES (4, 'Dave', 'Checking', 3200.00); INSERT INTO accounts VALUES (5, 'Eve', 'Savings', 900.00);",
+    "broken_query": "SELECT holder_name FROM accounts WHERE account_type = 'Checking' OR balance > 1000",
+    "expected_query": "SELECT holder_name FROM accounts WHERE account_type = 'Checking' AND balance > 1000",
+    "schema_description": "Table: accounts\n  - id (INTEGER): Primary key\n  - holder_name (TEXT): Account holder name\n  - account_type (TEXT): Account type (Checking or Savings)\n  - balance (REAL): Current account balance",
+    "expected_description": "Returns names of Checking account holders whose balance exceeds 1000. Should return 2 rows: Alice (2500.00), Dave (3200.00)."
+  },
+  {
     "task_id": "medium_001",
     "difficulty": "medium",
     "description": "Get each customer's name and their order total, but the JOIN condition is wrong — it joins on orders.id = customers.id instead of orders.customer_id = customers.id.",
@@ -42,6 +75,39 @@
     "expected_query": "SELECT students.name FROM students JOIN enrollments ON students.id = enrollments.student_id WHERE enrollments.course = 'Mathematics' AND enrollments.score >= 60",
     "schema_description": "Table: students\n  - id (INTEGER): Primary key\n  - name (TEXT): Student name\n  - grade (TEXT): Overall grade\n\nTable: enrollments\n  - id (INTEGER): Primary key\n  - student_id (INTEGER): Foreign key referencing students.id\n  - course (TEXT): Course name\n  - score (REAL): Score achieved",
     "expected_description": "Returns names of students who passed Mathematics (score >= 60). Should return 2 rows: Alice, Carol."
+  },
+  {
+    "task_id": "medium_003",
+    "difficulty": "medium",
+    "description": "Find titles of books currently on loan (returned = 0). The broken query JOINs on borrowings.id = books.id instead of borrowings.book_id = books.id, pairing each borrowing record with the book whose id matches the borrowing row number rather than the actual book borrowed.",
+    "schema_sql": "CREATE TABLE books (id INTEGER PRIMARY KEY, title TEXT NOT NULL, author TEXT NOT NULL, genre TEXT NOT NULL); CREATE TABLE borrowings (id INTEGER PRIMARY KEY, book_id INTEGER NOT NULL, member_name TEXT NOT NULL, borrow_date TEXT NOT NULL, returned INTEGER NOT NULL);",
+    "seed_data_sql": "INSERT INTO books VALUES (1, 'The Great Gatsby', 'F. Scott Fitzgerald', 'Fiction'); INSERT INTO books VALUES (2, 'Clean Code', 'Robert Martin', 'Technology'); INSERT INTO books VALUES (3, 'Dune', 'Frank Herbert', 'Sci-Fi'); INSERT INTO books VALUES (4, 'Sapiens', 'Yuval Harari', 'History'); INSERT INTO books VALUES (5, 'The Pragmatic Programmer', 'Andrew Hunt', 'Technology'); INSERT INTO borrowings VALUES (1, 3, 'Alice', '2024-03-01', 0); INSERT INTO borrowings VALUES (2, 1, 'Bob', '2024-03-05', 1); INSERT INTO borrowings VALUES (3, 5, 'Carol', '2024-03-10', 0); INSERT INTO borrowings VALUES (4, 2, 'Dave', '2024-03-12', 0); INSERT INTO borrowings VALUES (5, 4, 'Eve', '2024-03-15', 1);",
+    "broken_query": "SELECT books.title FROM borrowings JOIN books ON borrowings.id = books.id WHERE borrowings.returned = 0",
+    "expected_query": "SELECT books.title FROM borrowings JOIN books ON borrowings.book_id = books.id WHERE borrowings.returned = 0",
+    "schema_description": "Table: books\n  - id (INTEGER): Primary key\n  - title (TEXT): Book title\n  - author (TEXT): Author name\n  - genre (TEXT): Book genre\n\nTable: borrowings\n  - id (INTEGER): Primary key\n  - book_id (INTEGER): Foreign key referencing books.id\n  - member_name (TEXT): Name of the borrowing member\n  - borrow_date (TEXT): Date borrowed (YYYY-MM-DD)\n  - returned (INTEGER): 0 if still on loan, 1 if returned",
+    "expected_description": "Returns titles of books currently on loan (returned = 0). Should return 3 rows: Dune, The Pragmatic Programmer, Clean Code."
+  },
+  {
+    "task_id": "medium_004",
+    "difficulty": "medium",
+    "description": "Find patients who have appointments with Cardiology doctors. The broken query JOINs on appointments.patient_name = doctors.name instead of appointments.doctor_id = doctors.id, so no rows are returned because no patient shares a name with a doctor.",
+    "schema_sql": "CREATE TABLE doctors (id INTEGER PRIMARY KEY, name TEXT NOT NULL, specialty TEXT NOT NULL, years_experience INTEGER NOT NULL); CREATE TABLE appointments (id INTEGER PRIMARY KEY, doctor_id INTEGER NOT NULL, patient_name TEXT NOT NULL, appointment_date TEXT NOT NULL);",
+    "seed_data_sql": "INSERT INTO doctors VALUES (1, 'Dr. Smith', 'Cardiology', 15); INSERT INTO doctors VALUES (2, 'Dr. Jones', 'Neurology', 8); INSERT INTO doctors VALUES (3, 'Dr. Patel', 'Cardiology', 12); INSERT INTO doctors VALUES (4, 'Dr. Lee', 'Orthopedics', 20); INSERT INTO appointments VALUES (1, 1, 'Alice', '2024-04-01'); INSERT INTO appointments VALUES (2, 2, 'Bob', '2024-04-02'); INSERT INTO appointments VALUES (3, 1, 'Carol', '2024-04-03'); INSERT INTO appointments VALUES (4, 3, 'Dave', '2024-04-04'); INSERT INTO appointments VALUES (5, 4, 'Eve', '2024-04-05'); INSERT INTO appointments VALUES (6, 3, 'Frank', '2024-04-06');",
+    "broken_query": "SELECT appointments.patient_name FROM appointments JOIN doctors ON appointments.patient_name = doctors.name WHERE doctors.specialty = 'Cardiology'",
+    "expected_query": "SELECT appointments.patient_name FROM appointments JOIN doctors ON appointments.doctor_id = doctors.id WHERE doctors.specialty = 'Cardiology'",
+    "schema_description": "Table: doctors\n  - id (INTEGER): Primary key\n  - name (TEXT): Doctor name\n  - specialty (TEXT): Medical specialty\n  - years_experience (INTEGER): Years of experience\n\nTable: appointments\n  - id (INTEGER): Primary key\n  - doctor_id (INTEGER): Foreign key referencing doctors.id\n  - patient_name (TEXT): Patient name\n  - appointment_date (TEXT): Appointment date (YYYY-MM-DD)",
+    "expected_description": "Returns names of patients who have appointments with Cardiology doctors. Should return 4 rows: Alice, Carol, Dave, Frank."
+  },
+  {
+    "task_id": "medium_005",
+    "difficulty": "medium",
+    "description": "Find students enrolled in Computer Science courses with a score above 80. The broken query JOINs students to enrollments on enrollments.id = students.id instead of enrollments.student_id = students.id, pairing students with the wrong enrollment records and returning incorrect names.",
+    "schema_sql": "CREATE TABLE students (id INTEGER PRIMARY KEY, name TEXT NOT NULL, major TEXT NOT NULL); CREATE TABLE courses (id INTEGER PRIMARY KEY, course_name TEXT NOT NULL, department TEXT NOT NULL, credits INTEGER NOT NULL); CREATE TABLE enrollments (id INTEGER PRIMARY KEY, student_id INTEGER NOT NULL, course_id INTEGER NOT NULL, semester TEXT NOT NULL, score REAL NOT NULL);",
+    "seed_data_sql": "INSERT INTO students VALUES (1, 'Alice', 'Computer Science'); INSERT INTO students VALUES (2, 'Bob', 'Mathematics'); INSERT INTO students VALUES (3, 'Carol', 'Computer Science'); INSERT INTO students VALUES (4, 'Dave', 'Physics'); INSERT INTO courses VALUES (1, 'Algorithms', 'Computer Science', 4); INSERT INTO courses VALUES (2, 'Data Structures', 'Computer Science', 3); INSERT INTO courses VALUES (3, 'Calculus', 'Mathematics', 4); INSERT INTO courses VALUES (4, 'Networking', 'Computer Science', 3); INSERT INTO enrollments VALUES (1, 3, 1, 'Fall 2024', 92.0); INSERT INTO enrollments VALUES (2, 1, 2, 'Fall 2024', 88.0); INSERT INTO enrollments VALUES (3, 4, 4, 'Fall 2024', 85.0); INSERT INTO enrollments VALUES (4, 2, 1, 'Fall 2024', 75.0); INSERT INTO enrollments VALUES (5, 1, 3, 'Fall 2024', 91.0); INSERT INTO enrollments VALUES (6, 3, 4, 'Fall 2024', 79.0);",
+    "broken_query": "SELECT students.name FROM students JOIN enrollments ON students.id = enrollments.id JOIN courses ON enrollments.course_id = courses.id WHERE courses.department = 'Computer Science' AND enrollments.score > 80",
+    "expected_query": "SELECT students.name FROM students JOIN enrollments ON students.id = enrollments.student_id JOIN courses ON enrollments.course_id = courses.id WHERE courses.department = 'Computer Science' AND enrollments.score > 80",
+    "schema_description": "Table: students\n  - id (INTEGER): Primary key\n  - name (TEXT): Student name\n  - major (TEXT): Student major\n\nTable: courses\n  - id (INTEGER): Primary key\n  - course_name (TEXT): Course name\n  - department (TEXT): Department offering the course\n  - credits (INTEGER): Credit hours\n\nTable: enrollments\n  - id (INTEGER): Primary key\n  - student_id (INTEGER): Foreign key referencing students.id\n  - course_id (INTEGER): Foreign key referencing courses.id\n  - semester (TEXT): Semester\n  - score (REAL): Score achieved",
+    "expected_description": "Returns names of students enrolled in Computer Science courses with a score above 80. Should return 3 rows: Carol (Algorithms, 92.0), Alice (Data Structures, 88.0), Dave (Networking, 85.0)."
   },
   {
     "task_id": "hard_001",
